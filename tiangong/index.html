@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>中国空间站 · 天宫 | Three.js 三维模型</title>
+<link rel="stylesheet" href="styles.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "../vendor/three/build/three.module.js",
+    "three/addons/": "../vendor/three/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="stage"></div>
+<svg id="leaders" aria-hidden="true"></svg>
+<div id="labels" aria-hidden="true"></div>
+<div id="grain" aria-hidden="true"></div>
+
+<header id="masthead">
+  <div class="overline">CHINA SPACE STATION · TIANGONG</div>
+  <h1>中国空间站<span class="dot">·</span>天宫</h1>
+  <div class="rule"></div>
+  <div class="subtitle">三舱 T 字基本构型 · 1 单位 = 1 米 · 按公开资料真实尺寸建模</div>
+</header>
+
+<aside id="panel">
+  <div class="panel-head">
+    <span class="ph-title">控制台</span>
+    <button id="panelToggle" class="mini" title="折叠 / 展开控制台">—</button>
+  </div>
+
+  <div class="panel-body" id="panelBody">
+
+    <section class="grp">
+      <h3>构型</h3>
+      <label class="row chk"><input type="checkbox" id="cShenzhou" checked><span>神舟载人飞船（前向）</span></label>
+      <label class="row chk"><input type="checkbox" id="cShenzhou2"><span>神舟载人飞船（径向）</span></label>
+      <label class="row chk"><input type="checkbox" id="cTianzhou" checked><span>天舟货运飞船（后向）</span></label>
+      <label class="row chk"><input type="checkbox" id="cArm" checked><span>机械臂（大臂 / 小臂）</span></label>
+      <label class="row chk"><input type="checkbox" id="cDetail" checked><span>舱外设备与扶手</span></label>
+    </section>
+
+    <section class="grp">
+      <h3>太阳翼</h3>
+      <div class="row">
+        <label for="sWing">展开角 <b id="vWing">0°</b></label>
+        <input type="range" id="sWing" min="-90" max="90" step="1" value="0">
+      </div>
+      <label class="row chk"><input type="checkbox" id="cTrack"><span>自动对日定向</span></label>
+      <div class="row">
+        <label for="sFlex">柔性翼挠曲 <b id="vFlex">0.35</b></label>
+        <input type="range" id="sFlex" min="0" max="1" step="0.01" value="0.35">
+      </div>
+    </section>
+
+    <section class="grp">
+      <h3>机械臂</h3>
+      <div class="row">
+        <label for="sShoulder">肩关节 <b id="vShoulder">28°</b></label>
+        <input type="range" id="sShoulder" min="-120" max="120" step="1" value="28">
+      </div>
+      <div class="row">
+        <label for="sElbow">肘关节 <b id="vElbow">-62°</b></label>
+        <input type="range" id="sElbow" min="-150" max="150" step="1" value="-62">
+      </div>
+      <div class="row">
+        <label for="sWrist">腕关节 <b id="vWrist">34°</b></label>
+        <input type="range" id="sWrist" min="-120" max="120" step="1" value="34">
+      </div>
+      <label class="row chk"><input type="checkbox" id="cArmAnim"><span>关节演示动画</span></label>
+    </section>
+
+    <section class="grp">
+      <h3>视图</h3>
+      <label class="row chk"><input type="checkbox" id="cLabels" checked><span>舱段标注</span></label>
+      <label class="row chk"><input type="checkbox" id="cWire"><span>线框模式</span></label>
+      <label class="row chk"><input type="checkbox" id="cSpin"><span>自动环绕</span></label>
+      <div class="row">
+        <label for="selFocus">舱段聚焦</label>
+        <select id="selFocus">
+          <option value="">全部（不聚焦）</option>
+          <option value="tianhe">天和核心舱</option>
+          <option value="wentian">问天实验舱</option>
+          <option value="mengtian">梦天实验舱</option>
+          <option value="wings">太阳翼</option>
+          <option value="arm">机械臂</option>
+          <option value="shenzhou">神舟飞船</option>
+          <option value="tianzhou">天舟飞船</option>
+        </select>
+      </div>
+      <label class="row chk"><input type="checkbox" id="cClip"><span>剖切舱体（看舱内）</span></label>
+      <div class="row">
+        <label for="sClip">剖切面高度 <b id="vClip">0.0 m</b></label>
+        <input type="range" id="sClip" min="-3" max="3" step="0.05" value="0" disabled>
+      </div>
+    </section>
+
+    <section class="grp">
+      <h3>光照</h3>
+      <div class="row2">
+        <div class="row">
+          <label for="sAz">方位 <b id="vAz">38°</b></label>
+          <input type="range" id="sAz" min="-180" max="180" step="1" value="38">
+        </div>
+        <div class="row">
+          <label for="sEl">高度 <b id="vEl">42°</b></label>
+          <input type="range" id="sEl" min="-10" max="88" step="1" value="42">
+        </div>
+        <div class="row">
+          <label for="sSun">日照 <b id="vSun">2.10</b></label>
+          <input type="range" id="sSun" min="0.2" max="3.2" step="0.05" value="2.1">
+        </div>
+        <div class="row">
+          <label for="sAmb">补光 <b id="vAmb">0.55</b></label>
+          <input type="range" id="sAmb" min="0" max="1.4" step="0.05" value="0.55">
+        </div>
+      </div>
+      <div class="row">
+        <label for="sExp">曝光 <b id="vExp">0.95</b></label>
+        <input type="range" id="sExp" min="0.5" max="1.5" step="0.01" value="0.95">
+      </div>
+    </section>
+
+    <section class="grp">
+      <h3>渲染质量</h3>
+      <div class="seg" id="segQuality">
+        <button data-q="low">低</button>
+        <button data-q="mid" class="on">中</button>
+        <button data-q="high">高</button>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="panel-foot">
+    <div class="actions">
+      <button id="btnReset" class="act">复位视角与参数</button>
+      <button id="btnRandom" class="act">随机姿态</button>
+      <button id="btnShot" class="act primary">导出 PNG</button>
+    </div>
+  </div>
+</aside>
+
+<div id="hud">
+  <div class="hud-block">
+    <div class="hud-title">组合体参数</div>
+    <dl>
+      <dt>天和核心舱</dt><dd>16.6 × ⌀4.2 m · 22.5 t</dd>
+      <dt>问天实验舱</dt><dd>17.9 × ⌀4.2 m · ≈23 t</dd>
+      <dt>梦天实验舱</dt><dd>17.88 × ⌀4.2 m · ≈23 t</dd>
+      <dt>实验舱单翼</dt><dd>≈28 m · 110 m²</dd>
+      <dt>大机械臂</dt><dd>10 m · 7 自由度 · 25 t</dd>
+    </dl>
+  </div>
+</div>
+
+<div id="status">
+  <span><i>构型</i><b id="hudConfig">三舱 + 神舟 + 天舟</b></span>
+  <span><i>翼展</i><b id="hudSpan">56.0 m</b></span>
+  <span><i>帧率</i><b id="hudFps">—</b></span>
+</div>
+
+<div id="viewBar">
+  <button data-view="iso" class="on">等轴测</button>
+  <button data-view="top">俯视</button>
+  <button data-view="side">侧视</button>
+  <button data-view="front">正视</button>
+</div>
+<div id="hint">左键拖拽环绕 · 滚轮缩放 · 右键平移 · 双击舱段聚焦</div>
+<div id="toast"></div>
+
+<div id="loading"><div class="ld-inner"><div class="ld-ring"></div><div class="ld-text">正在装配空间站…</div></div></div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

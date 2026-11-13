@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>轨道终端 · ORBIT TERMINAL</title>
+<meta name="description" content="第一人称轨道视角的个人主页：地球、天宫掠过、流浪地球风格终端界面。">
+<link rel="stylesheet" href="styles.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "../vendor/three/build/three.module.js",
+    "three/addons/": "../vendor/three/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<canvas id="gl" aria-label="第一人称轨道视角：地球与天宫空间站。拖动环视，滚轮变焦。" role="img" tabindex="0"></canvas>
+<div id="optics" aria-hidden="true"></div>
+<svg id="arcs" aria-hidden="true"></svg>
+
+<div id="boot" role="status">
+  <div class="boot-box">
+    <div class="boot-mark">UEG · ORBIT TERMINAL</div>
+    <div class="boot-title">轨道终端</div>
+    <div class="boot-lines" id="bootLines"></div>
+    <div class="boot-bar"><i id="bootBar"></i></div>
+  </div>
+</div>
+
+<div id="fallback" hidden>
+  <img src="textures/earth-poster.jpg" alt="地球静态画面">
+  <div class="fb-box">
+    <b>渲染链路中断</b>
+    <span id="fbMsg">贴图或图形上下文未能就绪。</span>
+    <button id="fbRetry" class="btn">重新加载</button>
+  </div>
+</div>
+
+<header id="topbar">
+  <div class="tb-left">
+    <span class="tb-mark"></span>
+    <span class="tb-name">轨道终端</span>
+    <span class="tb-sub">ORBIT TERMINAL / UEG-07</span>
+  </div>
+  <div class="tb-mid">
+    <div class="tele">
+      <span class="t-item"><i>轨道高度</i><b id="tAlt">400</b><u>KM</u></span>
+      <span class="t-sep"></span>
+      <span class="t-item"><i>速度</i><b id="tVel">7.66</b><u>KM/S</u></span>
+      <span class="t-sep"></span>
+      <span class="t-item"><i>仰角</i><b id="tEl">—</b><u>DEG</u></span>
+      <span class="t-sep"></span>
+      <span class="t-item"><i>站点距离</i><b id="tDist">—</b><u>M</u></span>
+    </div>
+    <div class="ticks" id="ticks"></div>
+  </div>
+  <div class="tb-right">
+    <span class="t-clock" id="clock">--:--:-- UTC</span>
+    <button id="soundBtn" class="icon-btn" aria-pressed="true" title="声音总开关">
+      <span class="sq"></span><span id="soundLabel">声音 开</span>
+    </button>
+  </div>
+</header>
+
+<nav id="navL" class="rail rail-l" aria-label="主导航">
+  <button class="rail-item" data-panel="home" aria-current="page"><span class="mk"></span><span class="lb"><b>首页</b><i>HOME</i></span></button>
+  <button class="rail-item" data-panel="works"><span class="mk"></span><span class="lb"><b>作品</b><i>WORK</i></span></button>
+  <button class="rail-item" data-panel="logs"><span class="mk"></span><span class="lb"><b>日志</b><i>LOG</i></span></button>
+  <button class="rail-item" data-panel="about"><span class="mk"></span><span class="lb"><b>关于</b><i>ABOUT</i></span></button>
+</nav>
+
+<nav id="navR" class="rail rail-r" aria-label="辅助导航">
+  <button class="rail-item" data-panel="contact"><span class="mk"></span><span class="lb"><b>联系</b><i>CONTACT</i></span></button>
+  <button class="rail-item" data-panel="cv"><span class="mk"></span><span class="lb"><b>简历</b><i>CV</i></span></button>
+  <button class="rail-item" data-panel="station"><span class="mk"></span><span class="lb"><b>天宫</b><i>CSS</i></span></button>
+  <button class="rail-item" id="hudToggle"><span class="mk"></span><span class="lb"><b>关闭</b><i>HUD OFF</i></span></button>
+</nav>
+
+<div id="reticle" hidden aria-hidden="true">
+  <span class="rt-c tl"></span><span class="rt-c tr"></span><span class="rt-c bl"></span><span class="rt-c br"></span>
+  <span class="rt-tag">天宫 CSS <i id="rtDist">800 M</i></span>
+</div>
+
+<div id="comms" aria-live="polite"></div>
+
+<main id="panel" hidden aria-live="polite">
+  <div class="p-frame">
+    <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+    <header class="p-head">
+      <div class="p-title"><b id="pTitle">首页</b><i id="pSub">HOME</i></div>
+      <div class="p-code" id="pCode">SEC-00</div>
+      <button class="p-close" id="pClose" aria-label="关闭面板">✕</button>
+    </header>
+    <div class="p-body" id="pBody"></div>
+  </div>
+</main>
+
+<aside id="drawer" hidden>
+  <div class="d-frame">
+    <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+    <header class="d-head">
+      <div class="p-title"><b id="dTitle">作品</b><i id="dCode">—</i></div>
+      <button class="p-close" id="dClose" aria-label="关闭详情">✕</button>
+    </header>
+    <div class="d-body" id="dBody"></div>
+  </div>
+</aside>
+
+<footer id="console" aria-label="仪表控制区">
+  <div class="cs-status">
+    <div class="cs-pass">
+      <span class="warn-sq" id="warnSq"></span>
+      <div class="cs-pass-t">
+        <i id="passState">下次过境</i>
+        <b id="passClock">00:00</b>
+      </div>
+    </div>
+    <div class="cs-meta">
+      <span><i>构型</i><b>三舱 T 字</b></span>
+      <span><i>帧率</i><b id="fps">—</b></span>
+      <span><i>画质</i><b id="dpr">1.5</b></span>
+    </div>
+  </div>
+
+  <div class="cs-sliders">
+    <div class="sg">
+      <div class="sg-h">轨道 <i>ORBIT</i></div>
+      <div class="sg-row">
+        <label class="ctl"><span>高度<u id="vAlt">400 km</u></span><input type="range" id="cAlt" min="200" max="1200" step="10" value="400"></label>
+        <label class="ctl"><span>倍率<u id="vTime">1.0×</u></span><input type="range" id="cTime" min="0" max="20" step="0.5" value="1"></label>
+        <label class="ctl"><span>视场<u id="vFov">68°</u></span><input type="range" id="cFov" min="35" max="85" step="1" value="68"></label>
+        <label class="ctl"><span>站距<u id="vDist">450 m</u></span><input type="range" id="cDist" min="200" max="3000" step="50" value="450"></label>
+        <label class="ctl"><span>太阳<u id="vSun">-30°</u></span><input type="range" id="cSun" min="-180" max="180" step="5" value="-30"></label>
+      </div>
+    </div>
+    <div class="sg">
+      <div class="sg-h">渲染 <i>RENDER</i></div>
+      <div class="sg-row">
+        <label class="ctl"><span>云量<u id="vCover">75%</u></span><input type="range" id="cCover" min="0" max="1" step="0.05" value="0.75"></label>
+        <label class="ctl"><span>大气<u id="vScat">3.4</u></span><input type="range" id="cScat" min="0" max="8" step="0.2" value="3.4"></label>
+        <label class="ctl"><span>曝光<u id="vExp">1.12</u></span><input type="range" id="cExp" min="0.6" max="1.6" step="0.02" value="1.12"></label>
+        <label class="ctl"><span>星空<u id="vStar">100%</u></span><input type="range" id="cStar" min="0" max="1" step="0.05" value="1"></label>
+        <label class="ctl"><span>HUD<u id="vHud">100%</u></span><input type="range" id="cHud" min="0.3" max="1" step="0.05" value="1"></label>
+      </div>
+      <div class="sg-row sg-row2">
+        <label class="ctl"><span>云体积<u id="vRelief">1.00</u></span><input type="range" id="cRelief" min="0" max="2" step="0.05" value="1"></label>
+        <label class="ctl"><span>银河<u id="vMilky">1.00</u></span><input type="range" id="cMilky" min="0" max="2" step="0.05" value="1"></label>
+        <label class="ctl"><span>气旋<u id="vStorm">80%</u></span><input type="range" id="cStorm" min="0" max="1" step="0.05" value="0.8"></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="cs-actions">
+    <div class="tg-grid">
+      <label class="tg"><input type="checkbox" id="cGrid"><span>网格</span></label>
+      <label class="tg"><input type="checkbox" id="cLabels" checked><span>标注</span></label>
+      <label class="tg"><input type="checkbox" id="cWire"><span>线框</span></label>
+      <label class="tg"><input type="checkbox" id="cSpin" checked><span>自转</span></label>
+    </div>
+    <div class="bt-grid">
+      <button class="btn" id="bReset">复位</button>
+      <button class="btn" id="bRandom">随机</button>
+      <button class="btn btn-key" id="bPass">立即过境</button>
+      <button class="btn" id="bExport">导出 PNG</button>
+    </div>
+  </div>
+</footer>
+
+<div id="hint">拖动环视 · 滚轮变焦 · 双击站点锁定 · Esc 关闭面板</div>
+<div id="toast" role="status"></div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
